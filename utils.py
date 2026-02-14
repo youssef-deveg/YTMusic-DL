@@ -205,7 +205,8 @@ def save_json_file(file_path: Path, data: Dict[str, Any]) -> bool:
     try:
         file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+            # Convert non-serializable objects (e.g., Path) to strings
+            json.dump(data, f, indent=2, ensure_ascii=False, default=str)
         return True
     except Exception as e:
         print(f"Error saving {file_path}: {e}")

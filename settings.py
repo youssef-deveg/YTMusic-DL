@@ -7,8 +7,6 @@ Uses JSON file for persistence
 import json
 from pathlib import Path
 from typing import Dict, Any, Optional
-import flet as ft
-
 from config import DEFAULT_SETTINGS, SETTINGS_FILE, HISTORY_FILE, QUEUE_EXPORT_DIR
 from utils import load_json_file, save_json_file
 

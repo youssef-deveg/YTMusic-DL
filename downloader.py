@@ -9,7 +9,13 @@ import asyncio
 import subprocess
 from pathlib import Path
 from typing import Dict, Any, Optional, Callable
-import yt_dlp
+import sys
+
+# yt-dlp is an optional runtime dependency; handle missing imports gracefully
+try:
+    import yt_dlp
+except Exception:
+    yt_dlp = None
 from yt_dlp.utils import DownloadError
 
 from config import (
@@ -105,8 +111,8 @@ class AudioDownloader:
         
         # Postprocessors
         postprocessors = []
-        
-        # Audio extraction
+
+        # Audio extraction postprocessor
         if quality.get('codec'):
             pp_audio = {
                 'key': 'FFmpegExtractAudio',
@@ -115,23 +121,23 @@ class AudioDownloader:
             if quality.get('bitrate'):
                 pp_audio['preferredquality'] = quality['bitrate']
             postprocessors.append(pp_audio)
-        
+
         # Embed thumbnail
         if settings.get('embed_thumbnail', True):
             postprocessors.append({
                 'key': 'EmbedThumbnail',
                 'already_have_thumbnail': False
             })
-        
+
         # Add metadata
         if settings.get('add_metadata', True):
             postprocessors.append({'key': 'FFmpegMetadata'})
-        
+
         # Sponsor block - remove sponsors, intros, outros, ads
         sponsorblock = []
         if settings.get('remove_sponsors', True):
             sponsorblock = ['sponsor', 'intro', 'outro', 'selfpromo', 'preview', 'filler']
-        
+
         options = {
             'format': quality['format'],
             'outtmpl': str(self.download_path / f'%(title)s.%(ext)s'),
@@ -142,7 +148,6 @@ class AudioDownloader:
             'writesubtitles': settings.get('download_subtitles', True),
             'writeautomaticsub': False,
             'subtitleslangs': ['en', 'en-US'],
-            'sponsorblock_remove': sponsorblock if sponsorblock else None,
             'quiet': True,
             'no_warnings': True,
             'extractaudio': True,
@@ -156,15 +161,25 @@ class AudioDownloader:
                 'album:%(album)s',
                 'date:%(release_date)s'
             ],
-            'postprocessor_args': {
-                'embedthumbnail+ffmpeg_o': ['-c:v', 'mjpeg', '-vf', 'scale=500:500']
-            }
+            # leave postprocessor_args empty by default to avoid malformed ffmpeg args
+            'postprocessor_args': []
         }
-        
+
+        if sponsorblock:
+            options['sponsorblock_remove'] = sponsorblock
+
         return options
     
     def download(self, item: QueueItem) -> bool:
         """Download a single item"""
+        if yt_dlp is None:
+            queue_manager.update_item_status(
+                item.id,
+                DownloadStatus.ERROR,
+                "yt-dlp is not installed"
+            )
+            return False
+
         try:
             # Update status
             queue_manager.update_item_status(
@@ -240,6 +255,9 @@ class AudioDownloader:
     
     def get_preview_url(self, url: str, duration: int = 30) -> Optional[str]:
         """Get direct audio URL for preview"""
+        if yt_dlp is None:
+            return None
+
         try:
             ydl_opts = {
                 'format': 'bestaudio[ext=webm]/bestaudio',
@@ -269,6 +287,9 @@ class AudioDownloader:
     
     def get_playlist_info(self, url: str) -> Optional[Dict]:
         """Get playlist information"""
+        if yt_dlp is None:
+            return None
+
         try:
             ydl_opts = {
                 'quiet': True,
@@ -370,7 +391,7 @@ def update_ytdlp() -> tuple:
     """Update yt-dlp to latest version"""
     try:
         result = subprocess.run(
-            ['pip', 'install', '-U', 'yt-dlp'],
+            [sys.executable, '-m', 'pip', 'install', '-U', 'yt-dlp'],
             capture_output=True,
             text=True,
             timeout=120

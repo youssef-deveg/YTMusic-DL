@@ -57,7 +57,8 @@ class YouTubeMusicDownloader:
         self.history_list = None
         self.global_progress_bar = None
         self.global_status_text = None
-        self.tabs = None
+        self.nav_bar = None
+        self.tab_content = None
         self.audio_player = None
         
         # Setup
@@ -82,19 +83,21 @@ class YouTubeMusicDownloader:
     
     def setup_ui(self):
         """Setup UI components"""
+        # Resolve theme colors for current theme
+        theme = UI_CONFIG['theme_colors'][settings.theme]
         # App Bar
         self.page.appbar = ft.AppBar(
             title=ft.Text("YouTube Music Downloader", size=20, weight=ft.FontWeight.BOLD),
             center_title=False,
-            bgcolor=ft.colors.SURFACE_VARIANT,
+                bgcolor=theme.get('surface', None),
             actions=[
-                ft.IconButton(
-                    icon=ft.icons.SETTINGS,
+                    ft.IconButton(
+                        icon=ft.Icons.SETTINGS,
                     tooltip="Settings",
                     on_click=self.on_settings_click
                 ),
-                ft.IconButton(
-                    icon=ft.icons.UPDATE,
+                    ft.IconButton(
+                        icon=ft.Icons.UPDATE,
                     tooltip="Update yt-dlp",
                     on_click=self.on_update_ytdlp_click
                 )
@@ -105,13 +108,13 @@ class YouTubeMusicDownloader:
         self.global_progress_bar = ft.ProgressBar(
             value=0,
             width=400,
-            color=ft.colors.GREEN
+                    color=ft.Colors.GREEN
         )
         
         self.global_status_text = ft.Text(
             "Ready",
             size=12,
-            color=ft.colors.GREY_400
+                    color=ft.Colors.GREY_400
         )
         
         # Search Tab
@@ -126,39 +129,42 @@ class YouTubeMusicDownloader:
         # Settings Tab
         settings_tab = self.create_settings_tab()
         
-        # Tabs
-        self.tabs = ft.Tabs(
+        # Content container for tabs
+        self.tab_content = ft.Container(content=search_tab, expand=True)
+        
+        # NavigationBar for tab switching
+        self.nav_bar = ft.NavigationBar(
             selected_index=0,
-            animation_duration=300,
-            tabs=[
-                ft.Tab(
-                    text="Search",
-                    icon=ft.icons.SEARCH,
-                    content=search_tab
+            on_change=self.on_tab_change,
+            destinations=[
+                ft.NavigationBarDestination(
+                    label="Search",
+                    icon=ft.Icons.SEARCH
                 ),
-                ft.Tab(
-                    text="Queue",
-                    icon=ft.icons.QUEUE_MUSIC,
-                    content=queue_tab
+                ft.NavigationBarDestination(
+                    label="Queue",
+                    icon=ft.Icons.QUEUE_MUSIC
                 ),
-                ft.Tab(
-                    text="History",
-                    icon=ft.icons.HISTORY,
-                    content=history_tab
+                ft.NavigationBarDestination(
+                    label="History",
+                    icon=ft.Icons.HISTORY
                 ),
-                ft.Tab(
-                    text="Settings",
-                    icon=ft.icons.SETTINGS,
-                    content=settings_tab
+                ft.NavigationBarDestination(
+                    label="Settings",
+                    icon=ft.Icons.SETTINGS
                 )
-            ]
+            ],
+            bgcolor=theme.get('surface', None)
         )
+        
+        # Store tab contents
+        self.tab_contents = [search_tab, queue_tab, history_tab, settings_tab]
         
         # Global Progress Row
         progress_row = ft.Container(
             content=ft.Row(
                 [
-                    ft.Icon(ft.icons.DOWNLOAD, color=ft.colors.GREEN),
+                        ft.Icon(ft.Icons.DOWNLOAD, color=ft.Colors.GREEN),
                     self.global_progress_bar,
                     self.global_status_text
                 ],
@@ -166,28 +172,21 @@ class YouTubeMusicDownloader:
                 spacing=12
             ),
             padding=ft.padding.all(8),
-            bgcolor=ft.colors.SURFACE_VARIANT
+            bgcolor=theme.get('surface', None)
         )
         
         # Main Layout
         self.page.add(
             ft.Column(
                 [
-                    self.tabs,
-                    progress_row
+                    self.tab_content,
+                    progress_row,
+                    self.nav_bar
                 ],
                 expand=True,
                 spacing=0
             )
         )
-        
-        # Audio Player (hidden)
-        self.audio_player = ft.Audio(
-            src="",
-            autoplay=False,
-            volume=0.5
-        )
-        self.page.overlay.append(self.audio_player)
     
     def create_search_tab(self):
         """Create search tab content"""
@@ -195,14 +194,14 @@ class YouTubeMusicDownloader:
         self.search_field = ft.TextField(
             label="Search YouTube Music",
             hint_text="Enter song, artist, or album name...",
-            prefix_icon=ft.icons.SEARCH,
+                prefix_icon=ft.Icons.SEARCH,
             on_submit=self.on_search_submit,
             expand=True
         )
         
         self.search_button = ft.ElevatedButton(
             "Search",
-            icon=ft.icons.SEARCH,
+                icon=ft.Icons.SEARCH,
             on_click=self.on_search_click
         )
         
@@ -212,36 +211,36 @@ class YouTubeMusicDownloader:
             value=settings.get('search_sort', 'relevance'),
             options=[ft.dropdown.Option(s['value'], s['label']) for s in SEARCH_SORT_OPTIONS],
             width=150,
-            on_change=self.on_sort_change
         )
+        sort_dropdown.on_select = self.on_sort_change
         
         duration_dropdown = ft.Dropdown(
             label="Duration",
             value=settings.get('search_duration_filter', ''),
             options=[ft.dropdown.Option(d['value'], d['label']) for d in DURATION_FILTERS],
             width=150,
-            on_change=self.on_duration_filter_change
         )
+        duration_dropdown.on_select = self.on_duration_filter_change
         
         type_dropdown = ft.Dropdown(
             label="Type",
             value=settings.get('search_type_filter', ''),
             options=[ft.dropdown.Option(t['value'], t['label']) for t in VIDEO_TYPE_FILTERS],
             width=150,
-            on_change=self.on_type_filter_change
         )
+        type_dropdown.on_select = self.on_type_filter_change
         
         # Playlist button
         playlist_button = ft.ElevatedButton(
             "Add Playlist",
-            icon=ft.icons.PLAYLIST_ADD,
+                icon=ft.Icons.PLAYLIST_ADD,
             on_click=self.on_add_playlist_click
         )
         
         # Download All button
         download_all_button = ft.ElevatedButton(
             "Download All Results",
-            icon=ft.icons.DOWNLOAD,
+                icon=ft.Icons.DOWNLOAD,
             on_click=self.on_download_all_click
         )
         
@@ -279,21 +278,21 @@ class YouTubeMusicDownloader:
             ft.Container(
                 content=ft.Column(
                     [
-                        ft.Icon(ft.icons.SEARCH, size=64, color=ft.colors.GREY_700),
+                            ft.Icon(ft.Icons.SEARCH, size=64, color=ft.Colors.GREY_700),
                         ft.Text(
                             "Search for your favorite music",
                             size=18,
-                            color=ft.colors.GREY_500
+                                color=ft.Colors.GREY_500
                         ),
                         ft.Text(
                             "Enter a song name, artist, or paste a YouTube URL",
                             size=14,
-                            color=ft.colors.GREY_600
+                                color=ft.Colors.GREY_600
                         )
                     ],
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER
                 ),
-                alignment=ft.alignment.center,
+                alignment=ft.Alignment.CENTER,
                 expand=True
             )
         )
@@ -318,30 +317,30 @@ class YouTubeMusicDownloader:
         # Action buttons
         clear_completed_btn = ft.TextButton(
             "Clear Completed",
-            icon=ft.icons.CLEAR_ALL,
+            icon=ft.Icons.CLEAR_ALL,
             on_click=self.on_clear_completed_click
         )
         
         retry_all_btn = ft.TextButton(
             "Retry All Failed",
-            icon=ft.icons.REPLAY,
+            icon=ft.Icons.REPLAY,
             on_click=self.on_retry_all_click
         )
         
         cancel_all_btn = ft.TextButton(
             "Cancel All",
-            icon=ft.icons.CANCEL,
+            icon=ft.Icons.CANCEL,
             on_click=self.on_cancel_all_click
         )
         
         export_btn = ft.IconButton(
-            icon=ft.icons.UPLOAD,
+            icon=ft.Icons.UPLOAD,
             tooltip="Export Queue",
             on_click=self.on_export_queue_click
         )
         
         import_btn = ft.IconButton(
-            icon=ft.icons.DOWNLOAD,
+            icon=ft.Icons.DOWNLOAD,
             tooltip="Import Queue",
             on_click=self.on_import_queue_click
         )
@@ -379,7 +378,7 @@ class YouTubeMusicDownloader:
         # Action buttons
         clear_history_btn = ft.TextButton(
             "Clear History",
-            icon=ft.icons.DELETE_SWEEP,
+            icon=ft.Icons.DELETE_SWEEP,
             on_click=self.on_clear_history_click
         )
         
@@ -419,22 +418,23 @@ class YouTubeMusicDownloader:
                 title=ft.Text("Download Location"),
                 subtitle=ft.Text(str(settings.download_path)),
                 trailing=ft.IconButton(
-                    icon=ft.icons.EDIT,
+                    icon=ft.Icons.EDIT,
                     on_click=self.on_change_download_path
                 )
             )
         )
         
         # Default quality
+        default_quality_dropdown = ft.Dropdown(
+            value=settings.default_quality,
+            options=[ft.dropdown.Option(k, v['label']) for k, v in AUDIO_QUALITIES.items()],
+            width=180,
+        )
+        default_quality_dropdown.on_select = self.on_default_quality_change
         controls.append(
             ft.ListTile(
                 title=ft.Text("Default Quality"),
-                trailing=ft.Dropdown(
-                    value=settings.default_quality,
-                    options=[ft.dropdown.Option(k, v['label']) for k, v in AUDIO_QUALITIES.items()],
-                    width=180,
-                    on_change=self.on_default_quality_change
-                )
+                trailing=default_quality_dropdown
             )
         )
         
@@ -455,19 +455,20 @@ class YouTubeMusicDownloader:
         )
         
         # Theme
+        theme_dropdown = ft.Dropdown(
+            value=settings.theme,
+            options=[
+                ft.dropdown.Option("dark", "Dark"),
+                ft.dropdown.Option("light", "Light"),
+                ft.dropdown.Option("auto", "Auto")
+            ],
+            width=150,
+        )
+        theme_dropdown.on_select = self.on_theme_change
         controls.append(
             ft.ListTile(
                 title=ft.Text("Theme"),
-                trailing=ft.Dropdown(
-                    value=settings.theme,
-                    options=[
-                        ft.dropdown.Option("dark", "Dark"),
-                        ft.dropdown.Option("light", "Light"),
-                        ft.dropdown.Option("auto", "Auto")
-                    ],
-                    width=150,
-                    on_change=self.on_theme_change
-                )
+                trailing=theme_dropdown
             )
         )
         
@@ -514,12 +515,12 @@ class YouTubeMusicDownloader:
             ft.Container(
                 content=ft.ElevatedButton(
                     "Reset All Settings",
-                    icon=ft.icons.RESTORE,
-                    color=ft.colors.RED,
+                    icon=ft.Icons.RESTORE,
+                    color=ft.Colors.RED,
                     on_click=self.on_reset_settings
                 ),
                 padding=ft.padding.all(16),
-                alignment=ft.alignment.center
+                alignment=ft.Alignment.CENTER
             )
         )
         
@@ -538,7 +539,7 @@ class YouTubeMusicDownloader:
         # Check internet
         has_internet = await check_internet_connection()
         if not has_internet:
-            self.show_snackbar("No internet connection detected", ft.colors.RED)
+            self.show_snackbar("No internet connection detected", ft.Colors.RED)
         
         # Initialize searcher
         self.searcher = YouTubeSearcher()
@@ -562,6 +563,16 @@ class YouTubeMusicDownloader:
             except Exception as e:
                 print(f"Periodic update error: {e}")
     
+    def open_dialog(self, dialog):
+        """Open a dialog properly"""
+        dialog.open = True
+        self.page.update()
+    
+    def close_dialog(self, dialog):
+        """Close a dialog properly"""
+        dialog.open = False
+        self.page.update()
+    
     def update_global_progress(self):
         """Update global progress bar"""
         progress, completed, failed = queue_manager.get_global_progress()
@@ -580,6 +591,19 @@ class YouTubeMusicDownloader:
             self.global_status_text.value = "Ready"
         
         self.page.update()
+    
+    def on_tab_change(self, e):
+        """Handle tab change"""
+        selected_index = e.control.selected_index
+        self.tab_content.content = self.tab_contents[selected_index]
+        self.page.update()
+    
+    def switch_to_tab(self, index):
+        """Switch to a specific tab"""
+        if 0 <= index < len(self.tab_contents):
+            self.nav_bar.selected_index = index
+            self.tab_content.content = self.tab_contents[index]
+            self.page.update()
     
     # Search handlers
     async def on_search_submit(self, e):
@@ -607,7 +631,7 @@ class YouTubeMusicDownloader:
         self.results_list.controls = [
             ft.Container(
                 content=ft.ProgressRing(),
-                alignment=ft.alignment.center,
+                alignment=ft.Alignment.CENTER,
                 expand=True
             )
         ]
@@ -628,7 +652,7 @@ class YouTubeMusicDownloader:
                 self.display_search_results(results)
                 
         except Exception as e:
-            self.show_snackbar(f"Search error: {str(e)}", ft.colors.RED)
+            self.show_snackbar(f"Search error: {str(e)}", ft.Colors.RED)
             self.results_list.controls = []
         
         finally:
@@ -642,8 +666,8 @@ class YouTubeMusicDownloader:
         if not results:
             self.results_list.controls.append(
                 ft.Container(
-                    content=ft.Text("No results found", color=ft.colors.GREY_500),
-                    alignment=ft.alignment.center,
+                    content=ft.Text("No results found", color=ft.Colors.GREY_500),
+                    alignment=ft.Alignment.CENTER,
                     expand=True
                 )
             )
@@ -662,16 +686,16 @@ class YouTubeMusicDownloader:
         """Add video by URL"""
         video_id = get_video_id(url)
         if not video_id:
-            self.show_snackbar("Invalid YouTube URL", ft.colors.RED)
+            self.show_snackbar("Invalid YouTube URL", ft.Colors.RED)
             return
         
         async with self.searcher:
             video_info = await self.searcher.get_video_info(video_id)
             if video_info:
                 self.on_add_to_queue(video_info, settings.default_quality)
-                self.show_snackbar(f"Added: {video_info['title']}", ft.colors.GREEN)
+                self.show_snackbar(f"Added: {video_info['title']}", ft.Colors.GREEN)
             else:
-                self.show_snackbar("Could not fetch video info", ft.colors.RED)
+                self.show_snackbar("Could not fetch video info", ft.Colors.RED)
     
     def on_add_to_queue(self, video_data: dict, quality: str):
         """Add video to download queue"""
@@ -686,39 +710,38 @@ class YouTubeMusicDownloader:
         )
         
         queue_manager.add_item(item)
-        self.show_snackbar(f"Added to queue: {video_data.get('title', '')}", ft.colors.GREEN)
+        self.show_snackbar(f"Added to queue: {video_data.get('title', '')}", ft.Colors.GREEN)
         
         # Switch to queue tab
-        self.tabs.selected_index = 1
-        self.page.update()
+        self.switch_to_tab(1)
     
     def on_add_playlist_click(self, e):
         """Handle add playlist button click"""
         def on_confirm(url, quality):
-            self.page.close(dialog)
+            self.close_dialog(dialog)
             asyncio.create_task(self.add_playlist(url, quality))
         
         def on_cancel():
-            self.page.close(dialog)
+            self.close_dialog(dialog)
         
         dialog = PlaylistInputDialog(on_confirm, on_cancel)
-        self.page.open(dialog)
+        self.open_dialog(dialog)
     
     async def add_playlist(self, url: str, quality: str):
         """Add playlist to queue"""
         playlist_id = extract_playlist_id(url)
         if not playlist_id:
-            self.show_snackbar("Invalid playlist URL", ft.colors.RED)
+            self.show_snackbar("Invalid playlist URL", ft.Colors.RED)
             return
         
-        self.show_snackbar("Fetching playlist...", ft.colors.BLUE)
+        self.show_snackbar("Fetching playlist...", ft.Colors.BLUE)
         
         try:
             async with self.searcher:
                 videos = await self.searcher.get_playlist_videos(playlist_id)
                 
                 if not videos:
-                    self.show_snackbar("No videos found in playlist", ft.colors.RED)
+                    self.show_snackbar("No videos found in playlist", ft.Colors.RED)
                     return
                 
                 items = []
@@ -735,14 +758,13 @@ class YouTubeMusicDownloader:
                     items.append(item)
                 
                 queue_manager.add_items(items)
-                self.show_snackbar(f"Added {len(items)} videos from playlist", ft.colors.GREEN)
+                self.show_snackbar(f"Added {len(items)} videos from playlist", ft.Colors.GREEN)
                 
                 # Switch to queue tab
-                self.tabs.selected_index = 1
-                self.page.update()
+                self.switch_to_tab(1)
                 
         except Exception as e:
-            self.show_snackbar(f"Error: {str(e)}", ft.colors.RED)
+            self.show_snackbar(f"Error: {str(e)}", ft.Colors.RED)
     
     def on_download_all_click(self, e):
         """Add all search results to queue"""
@@ -754,7 +776,7 @@ class YouTubeMusicDownloader:
             self.on_add_to_queue(video, settings.default_quality)
             count += 1
         
-        self.show_snackbar(f"Added {count} items to queue", ft.colors.GREEN)
+        self.show_snackbar(f"Added {count} items to queue", ft.Colors.GREEN)
     
     # Queue handlers
     def on_queue_update(self):
@@ -772,12 +794,12 @@ class YouTubeMusicDownloader:
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Icon(ft.icons.QUEUE_MUSIC, size=64, color=ft.colors.GREY_700),
-                            ft.Text("Queue is empty", color=ft.colors.GREY_500)
+                            ft.Icon(ft.Icons.QUEUE_MUSIC, size=64, color=ft.Colors.GREY_700),
+                            ft.Text("Queue is empty", color=ft.Colors.GREY_500)
                         ],
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER
                     ),
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment.CENTER,
                     expand=True
                 )
             )
@@ -796,12 +818,12 @@ class YouTubeMusicDownloader:
     def on_cancel_download(self, item_id: str):
         """Cancel a download"""
         queue_manager.cancel_download(item_id)
-        self.show_snackbar("Download cancelled", ft.colors.ORANGE)
+        self.show_snackbar("Download cancelled", ft.Colors.ORANGE)
     
     def on_retry_download(self, item_id: str):
         """Retry a failed download"""
         queue_manager.retry_item(item_id)
-        self.show_snackbar("Retrying download...", ft.colors.BLUE)
+        self.show_snackbar("Retrying download...", ft.Colors.BLUE)
     
     def on_remove_from_queue(self, item_id: str):
         """Remove item from queue"""
@@ -816,50 +838,50 @@ class YouTubeMusicDownloader:
     def on_retry_all_click(self, e):
         """Retry all failed downloads"""
         count = queue_manager.retry_all_failed()
-        self.show_snackbar(f"Retrying {count} downloads", ft.colors.BLUE)
+        self.show_snackbar(f"Retrying {count} downloads", ft.Colors.BLUE)
     
     def on_cancel_all_click(self, e):
         """Cancel all downloads"""
         queue_manager.cancel_all()
-        self.show_snackbar("All downloads cancelled", ft.colors.ORANGE)
+        self.show_snackbar("All downloads cancelled", ft.Colors.ORANGE)
     
     def on_export_queue_click(self, e):
         """Export queue to file"""
         def on_export(filename):
             if queue_manager.export_queue(filename):
-                self.show_snackbar(f"Queue exported to {filename}", ft.colors.GREEN)
+                self.show_snackbar(f"Queue exported to {filename}", ft.Colors.GREEN)
             else:
-                self.show_snackbar("Failed to export queue", ft.colors.RED)
-            self.page.close(dialog)
+                self.show_snackbar("Failed to export queue", ft.Colors.RED)
+            self.close_dialog(dialog)
         
         def on_cancel():
-            self.page.close(dialog)
+            self.close_dialog(dialog)
         
         dialog = ExportQueueDialog(on_export, on_cancel)
-        self.page.open(dialog)
+        self.open_dialog(dialog)
     
     def on_import_queue_click(self, e):
         """Import queue from file"""
         files = settings.list_exported_queues()
         
         if not files:
-            self.show_snackbar("No saved queues found", ft.colors.ORANGE)
+            self.show_snackbar("No saved queues found", ft.Colors.ORANGE)
             return
         
         def on_import(filename):
             count = queue_manager.import_queue(filename)
             if count > 0:
-                self.show_snackbar(f"Imported {count} items", ft.colors.GREEN)
+                self.show_snackbar(f"Imported {count} items", ft.Colors.GREEN)
                 self.refresh_queue()
             else:
-                self.show_snackbar("Failed to import queue", ft.colors.RED)
-            self.page.close(dialog)
+                self.show_snackbar("Failed to import queue", ft.Colors.RED)
+            self.close_dialog(dialog)
         
         def on_cancel():
-            self.page.close(dialog)
+            self.close_dialog(dialog)
         
         dialog = ImportQueueDialog(files, on_import, on_cancel)
-        self.page.open(dialog)
+        self.open_dialog(dialog)
     
     # History handlers
     def refresh_history(self):
@@ -873,12 +895,12 @@ class YouTubeMusicDownloader:
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Icon(ft.icons.HISTORY, size=64, color=ft.colors.GREY_700),
-                            ft.Text("No download history", color=ft.colors.GREY_500)
+                            ft.Icon(ft.Icons.HISTORY, size=64, color=ft.Colors.GREY_700),
+                            ft.Text("No download history", color=ft.Colors.GREY_500)
                         ],
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER
                     ),
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment.CENTER,
                     expand=True
                 )
             )
@@ -894,14 +916,12 @@ class YouTubeMusicDownloader:
         self.page.update()
     
     def on_play_history_item(self, item: dict):
-        """Play history item"""
+        """Play history item - audio playback not available in this version"""
         file_path = item.get('file_path')
         if file_path and Path(file_path).exists():
-            self.audio_player.src = file_path
-            self.audio_player.play()
-            self.show_snackbar(f"Playing: {item.get('title', '')}", ft.colors.GREEN)
+            self.show_snackbar(f"File location: {file_path}", ft.Colors.GREEN)
         else:
-            self.show_snackbar("File not found", ft.colors.RED)
+            self.show_snackbar("File not found", ft.Colors.RED)
     
     def on_delete_history_item(self, item: dict):
         """Delete history item"""
@@ -914,7 +934,7 @@ class YouTubeMusicDownloader:
         """Clear all history"""
         settings.clear_history()
         self.refresh_history()
-        self.show_snackbar("History cleared", ft.colors.GREEN)
+        self.show_snackbar("History cleared", ft.Colors.GREEN)
     
     # Settings handlers
     def on_settings_click(self, e):
@@ -922,19 +942,19 @@ class YouTubeMusicDownloader:
         def on_save(new_settings):
             settings.update(new_settings)
             self.apply_theme()
-            self.page.close(dialog)
-            self.show_snackbar("Settings saved", ft.colors.GREEN)
+            self.close_dialog(dialog)
+            self.show_snackbar("Settings saved", ft.Colors.GREEN)
         
         def on_close():
-            self.page.close(dialog)
+            self.close_dialog(dialog)
         
         dialog = SettingsDialog(on_save, on_close)
-        self.page.open(dialog)
+        self.open_dialog(dialog)
     
     def on_change_download_path(self, e):
         """Change download path"""
         # Would need platform-specific file picker
-        self.show_snackbar("Feature not available on this platform", ft.colors.ORANGE)
+        self.show_snackbar("Feature not available on this platform", ft.Colors.ORANGE)
     
     def on_default_quality_change(self, e):
         """Change default quality"""
@@ -961,25 +981,27 @@ class YouTubeMusicDownloader:
         """Reset settings to defaults"""
         settings.reset_to_defaults()
         self.apply_theme()
-        self.show_snackbar("Settings reset to defaults", ft.colors.GREEN)
+        self.show_snackbar("Settings reset to defaults", ft.Colors.GREEN)
     
     def apply_theme(self):
         """Apply current theme"""
         self.page.theme_mode = ft.ThemeMode.DARK if settings.theme == "dark" else ft.ThemeMode.LIGHT
-        theme = UI_CONFIG['theme_colors'][settings.theme]
+        # Support 'auto' and unknown values by falling back to 'dark'
+        theme_key = settings.theme if settings.theme in UI_CONFIG['theme_colors'] else 'dark'
+        theme = UI_CONFIG['theme_colors'][theme_key]
         self.page.bgcolor = theme['bg']
         self.page.update()
     
     async def on_update_ytdlp_click(self, e):
         """Update yt-dlp"""
-        self.show_snackbar("Updating yt-dlp...", ft.colors.BLUE)
+        self.show_snackbar("Updating yt-dlp...", ft.Colors.BLUE)
         
         success, message = update_ytdlp()
         
         if success:
-            self.show_snackbar(message, ft.colors.GREEN)
+            self.show_snackbar(message, ft.Colors.GREEN)
         else:
-            self.show_snackbar(message, ft.colors.RED)
+            self.show_snackbar(message, ft.Colors.RED)
     
     def on_sort_change(self, e):
         """Handle sort change"""
@@ -993,15 +1015,19 @@ class YouTubeMusicDownloader:
         """Handle type filter change"""
         settings.set('search_type_filter', e.control.value)
     
-    def show_snackbar(self, message: str, color: str = ft.colors.GREEN):
+    def show_snackbar(self, message: str, color: str = ft.Colors.GREEN):
         """Show snackbar message"""
-        self.page.show_snack_bar(
-            ft.SnackBar(
-                content=ft.Text(message),
-                bgcolor=color,
-                duration=3000
-            )
-        )
+        snack = ft.SnackBar(content=ft.Text(message), bgcolor=color, duration=3000)
+        # Support multiple Flet versions: prefer `show_snack_bar`, fallback
+        # to assigning `page.snack_bar` and updating the page.
+        try:
+            if hasattr(self.page, 'show_snack_bar'):
+                self.page.show_snack_bar(snack)
+            else:
+                self.page.snack_bar = snack
+                self.page.update()
+        except Exception:
+            print(message)
 
 
 def main(page: Page):
@@ -1010,4 +1036,40 @@ def main(page: Page):
 
 
 if __name__ == "__main__":
-    ft.app(target=main, view=ft.AppView.FLET_APP)
+    # Start the Flet app on an available port and bind to 0.0.0.0 by default
+    # so the server is reachable from the host. If the chosen port is in use,
+    # pick another free port and retry.
+    import socket, os
+
+    def _get_free_port(host: str = "0.0.0.0") -> int:
+        family = socket.AF_INET6 if socket.has_ipv6 else socket.AF_INET
+        s = socket.socket(family, socket.SOCK_STREAM)
+        try:
+            # bind to port 0 to let OS select an available port on the requested host
+            if family == socket.AF_INET6:
+                bind_addr = ('::', 0) if host in (None, '0.0.0.0') else (host, 0)
+            else:
+                bind_addr = (host if host else '127.0.0.1', 0)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind(bind_addr)
+            return s.getsockname()[1]
+        finally:
+            s.close()
+
+    host = os.environ.get('FLET_SERVER_HOST', '0.0.0.0')
+
+    # Ensure FLET_SERVER_PORT is set to a free port if not already provided
+    if not os.environ.get('FLET_SERVER_PORT'):
+        free_port = _get_free_port(host=host)
+        os.environ['FLET_SERVER_PORT'] = str(free_port)
+
+    chosen_port = int(os.environ.get('FLET_SERVER_PORT', '0'))
+    print(f"Starting Flet on {host}:{chosen_port}")
+    try:
+        ft.run(main, view=ft.AppView.FLET_APP, host=host, port=chosen_port)
+    except OSError as e:
+        print(f"Port {chosen_port} bind failed: {e}. Picking a new free port.")
+        free_port = _get_free_port(host=host)
+        os.environ['FLET_SERVER_PORT'] = str(free_port)
+        print(f"Retrying on {host}:{free_port}")
+        ft.run(main, view=ft.AppView.FLET_APP, host=host, port=free_port)

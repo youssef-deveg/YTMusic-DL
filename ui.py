@@ -54,19 +54,19 @@ class SearchResultCard(ft.Card):
                 for k, v in AUDIO_QUALITIES.items()
             ],
             width=150,
-            on_change=self.on_quality_change
         )
+        self.quality_dropdown.on_select = self.on_quality_change
         
         # Add to queue button
         self.add_button = ft.ElevatedButton(
             "Add to Queue",
-            icon=ft.icons.ADD,
+            icon=ft.Icons.ADD,
             on_click=self.on_add_click
         )
         
         # Preview button
         self.preview_button = ft.IconButton(
-            icon=ft.icons.PLAY_ARROW,
+            icon=ft.Icons.PLAY_ARROW,
             tooltip="Preview (30s)",
             on_click=self.on_preview_click
         )
@@ -76,14 +76,14 @@ class SearchResultCard(ft.Card):
             src=video_data.get('thumbnail', ''),
             width=200,
             height=120,
-            fit=ft.ImageFit.COVER,
+            fit=ft.BoxFit.COVER,
             border_radius=8
         )
         
         # Short badge
         badges = []
         if video_data.get('is_short'):
-            badges.append(ft.Chip(label=ft.Text("SHORT"), bgcolor=ft.colors.PINK))
+            badges.append(ft.Chip(label=ft.Text("SHORT"), bgcolor=ft.Colors.PINK))
         
         # Content layout
         content = ft.Container(
@@ -96,39 +96,38 @@ class SearchResultCard(ft.Card):
                     ),
                     
                     # Info
-                    ft.Expanded(
-                        child=ft.Column(
-                            [
-                                ft.Row(badges) if badges else ft.Container(),
-                                ft.Text(
-                                    truncate_text(video_data.get('title', ''), 50),
-                                    size=16,
-                                    weight=ft.FontWeight.BOLD,
-                                    no_wrap=True
-                                ),
-                                ft.Text(
-                                    video_data.get('channel', ''),
-                                    size=12,
-                                    color=ft.colors.GREY_400
-                                ),
-                                ft.Row(
-                                    [
-                                        ft.Text(
-                                            video_data.get('duration', '--:--'),
-                                            size=12
-                                        ),
-                                        ft.Text("•", size=12),
-                                        ft.Text(
-                                            video_data.get('views_formatted', '0 views'),
-                                            size=12
-                                        )
-                                    ]
-                                )
-                            ],
-                            spacing=4,
-                            alignment=ft.MainAxisAlignment.START,
-                            horizontal_alignment=ft.CrossAxisAlignment.START
-                        )
+                    ft.Column(
+                        [
+                            ft.Row(badges) if badges else ft.Container(),
+                            ft.Text(
+                                truncate_text(video_data.get('title', ''), 50),
+                                size=16,
+                                weight=ft.FontWeight.BOLD,
+                                no_wrap=True
+                            ),
+                            ft.Text(
+                                video_data.get('channel', ''),
+                                size=12,
+                                color=ft.Colors.GREY_400
+                            ),
+                            ft.Row(
+                                [
+                                    ft.Text(
+                                        video_data.get('duration', '--:--'),
+                                        size=12
+                                    ),
+                                    ft.Text("•", size=12),
+                                    ft.Text(
+                                        video_data.get('views_formatted', '0 views'),
+                                        size=12
+                                    )
+                                ]
+                            )
+                        ],
+                        spacing=4,
+                        alignment=ft.MainAxisAlignment.START,
+                        horizontal_alignment=ft.CrossAxisAlignment.START,
+                        expand=True
                     ),
                     
                     # Actions
@@ -183,13 +182,13 @@ class QueueItemCard(ft.Card):
         
         # Status colors
         self.status_colors = {
-            DownloadStatus.WAITING: ft.colors.GREY,
-            DownloadStatus.PROCESSING: ft.colors.BLUE,
-            DownloadStatus.DOWNLOADING: ft.colors.BLUE,
-            DownloadStatus.CONVERTING: ft.colors.ORANGE,
-            DownloadStatus.DONE: ft.colors.GREEN,
-            DownloadStatus.ERROR: ft.colors.RED,
-            DownloadStatus.CANCELLED: ft.colors.GREY
+            DownloadStatus.WAITING: ft.Colors.GREY,
+            DownloadStatus.PROCESSING: ft.Colors.BLUE,
+            DownloadStatus.DOWNLOADING: ft.Colors.BLUE,
+            DownloadStatus.CONVERTING: ft.Colors.ORANGE,
+            DownloadStatus.DONE: ft.Colors.GREEN,
+            DownloadStatus.ERROR: ft.Colors.RED,
+            DownloadStatus.CANCELLED: ft.Colors.GREY
         }
         
         # Build card
@@ -197,7 +196,7 @@ class QueueItemCard(ft.Card):
     
     def update_content(self):
         """Update card content based on item status"""
-        status_color = self.status_colors.get(self.item.status, ft.colors.GREY)
+        status_color = self.status_colors.get(self.item.status, ft.Colors.GREY)
         
         # Progress bar
         progress_bar = ft.ProgressBar(
@@ -224,7 +223,7 @@ class QueueItemCard(ft.Card):
         info_text = ft.Text(
             f"{self.item.speed} {self.item.eta}",
             size=11,
-            color=ft.colors.GREY_400
+            color=ft.Colors.GREY_400
         )
         
         # Action buttons
@@ -233,42 +232,42 @@ class QueueItemCard(ft.Card):
         if self.item.status in [DownloadStatus.DOWNLOADING, DownloadStatus.PROCESSING]:
             buttons.append(
                 ft.IconButton(
-                    icon=ft.icons.CANCEL,
+                    icon=ft.Icons.CANCEL,
                     tooltip="Cancel",
                     on_click=self.on_cancel_click,
-                    icon_color=ft.colors.RED
+                    icon_color=ft.Colors.RED
                 )
             )
         elif self.item.status == DownloadStatus.ERROR:
             buttons.append(
                 ft.IconButton(
-                    icon=ft.icons.REPLAY,
+                    icon=ft.Icons.REPLAY,
                     tooltip="Retry",
                     on_click=self.on_retry_click,
-                    icon_color=ft.colors.BLUE
+                    icon_color=ft.Colors.BLUE
                 )
             )
             if self.item.error_message:
                 buttons.append(
                     ft.IconButton(
-                        icon=ft.icons.ERROR,
+                        icon=ft.Icons.ERROR,
                         tooltip=self.item.error_message,
-                        icon_color=ft.colors.RED
+                        icon_color=ft.Colors.RED
                     )
                 )
         elif self.item.status == DownloadStatus.DONE:
             buttons.append(
                 ft.IconButton(
-                    icon=ft.icons.CHECK_CIRCLE,
+                    icon=ft.Icons.CHECK_CIRCLE,
                     tooltip="Completed",
-                    icon_color=ft.colors.GREEN,
+                    icon_color=ft.Colors.GREEN,
                     disabled=True
                 )
             )
         
         buttons.append(
             ft.IconButton(
-                icon=ft.icons.DELETE,
+                icon=ft.Icons.DELETE,
                 tooltip="Remove from queue",
                 on_click=self.on_remove_click
             )
@@ -284,39 +283,38 @@ class QueueItemCard(ft.Card):
                             src=self.item.thumbnail or "",
                             width=80,
                             height=60,
-                            fit=ft.ImageFit.COVER,
+                            fit=ft.BoxFit.COVER,
                             border_radius=4
                         ),
                         border_radius=4
                     ),
                     
                     # Info
-                    ft.Expanded(
-                        child=ft.Column(
-                            [
-                                ft.Text(
-                                    truncate_text(self.item.title, 40),
-                                    size=14,
-                                    weight=ft.FontWeight.BOLD,
-                                    no_wrap=True
-                                ),
-                                ft.Text(
-                                    self.item.channel,
-                                    size=11,
-                                    color=ft.colors.GREY_400
-                                ),
-                                ft.Row(
-                                    [
-                                        ft.Text(
-                                            AUDIO_QUALITIES.get(self.item.quality, {}).get('label', self.item.quality),
-                                            size=10,
-                                            color=ft.colors.GREY_500
-                                        )
-                                    ]
-                                )
-                            ],
-                            spacing=2
-                        )
+                    ft.Column(
+                        [
+                            ft.Text(
+                                truncate_text(self.item.title, 40),
+                                size=14,
+                                weight=ft.FontWeight.BOLD,
+                                no_wrap=True
+                            ),
+                            ft.Text(
+                                self.item.channel,
+                                size=11,
+                                color=ft.Colors.GREY_400
+                            ),
+                            ft.Row(
+                                [
+                                    ft.Text(
+                                        AUDIO_QUALITIES.get(self.item.quality, {}).get('label', self.item.quality),
+                                        size=10,
+                                        color=ft.Colors.GREY_500
+                                    )
+                                ]
+                            )
+                        ],
+                        spacing=2,
+                        expand=True
                     ),
                     
                     # Progress
@@ -376,56 +374,55 @@ class HistoryItemCard(ft.Card):
                 [
                     # Icon
                     ft.Icon(
-                        ft.icons.AUDIO_FILE,
+                        ft.Icons.AUDIO_FILE,
                         size=40,
-                        color=ft.colors.GREEN
+                        color=ft.Colors.GREEN
                     ),
                     
                     # Info
-                    ft.Expanded(
-                        child=ft.Column(
-                            [
-                                ft.Text(
-                                    truncate_text(item.get('title', ''), 40),
-                                    size=14,
-                                    weight=ft.FontWeight.BOLD,
-                                    no_wrap=True
-                                ),
-                                ft.Text(
-                                    item.get('channel', ''),
-                                    size=11,
-                                    color=ft.colors.GREY_400
-                                ),
-                                ft.Row(
-                                    [
-                                        ft.Text(
-                                            item.get('file_size', ''),
-                                            size=10,
-                                            color=ft.colors.GREY_500
-                                        ),
-                                        ft.Text("•", size=10),
-                                        ft.Text(
-                                            item.get('quality', ''),
-                                            size=10,
-                                            color=ft.colors.GREY_500
-                                        )
-                                    ]
-                                )
-                            ],
-                            spacing=2
-                        )
+                    ft.Column(
+                        [
+                            ft.Text(
+                                truncate_text(item.get('title', ''), 40),
+                                size=14,
+                                weight=ft.FontWeight.BOLD,
+                                no_wrap=True
+                            ),
+                            ft.Text(
+                                item.get('channel', ''),
+                                size=11,
+                                color=ft.Colors.GREY_400
+                            ),
+                            ft.Row(
+                                [
+                                    ft.Text(
+                                        item.get('file_size', ''),
+                                        size=10,
+                                        color=ft.Colors.GREY_500
+                                    ),
+                                    ft.Text("•", size=10),
+                                    ft.Text(
+                                        item.get('quality', ''),
+                                        size=10,
+                                        color=ft.Colors.GREY_500
+                                    )
+                                ]
+                            )
+                        ],
+                        spacing=2,
+                        expand=True
                     ),
                     
                     # Actions
                     ft.Row(
                         [
                             ft.IconButton(
-                                icon=ft.icons.PLAY_ARROW,
+                                icon=ft.Icons.PLAY_ARROW,
                                 tooltip="Play",
                                 on_click=self.on_play_click
                             ),
                             ft.IconButton(
-                                icon=ft.icons.DELETE,
+                                icon=ft.Icons.DELETE,
                                 tooltip="Remove from history",
                                 on_click=self.on_delete_click
                             )
@@ -465,7 +462,7 @@ class SettingsDialog(ft.AlertDialog):
             value=settings.download_path,
             read_only=True,
             suffix=ft.IconButton(
-                icon=ft.icons.FOLDER_OPEN,
+                                icon=ft.Icons.FOLDER_OPEN,
                 tooltip="Browse",
                 on_click=self.on_browse_click
             )
@@ -597,7 +594,7 @@ class PlaylistInputDialog(ft.AlertDialog):
         self.url_field = ft.TextField(
             label="Playlist URL",
             hint_text="https://www.youtube.com/playlist?list=...",
-            prefix_icon=ft.icons.LINK
+            prefix_icon=ft.Icons.LINK
         )
         
         self.quality_dropdown = ft.Dropdown(
@@ -640,7 +637,7 @@ class ExportQueueDialog(ft.AlertDialog):
         self.filename_field = ft.TextField(
             label="Filename",
             hint_text="my_queue",
-            prefix_icon=ft.icons.SAVE
+            prefix_icon=ft.Icons.SAVE
         )
         
         self.content = self.filename_field
