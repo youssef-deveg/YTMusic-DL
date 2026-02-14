@@ -68,57 +68,10 @@ jobs:
         java -version
         echo $ANDROID_HOME
         
-    - name: Create Flet configuration
+    - name: Display Flet configuration
       run: |
-        cat > pyproject.toml << 'EOF'
-[project]
-name = "YT-Music-Downloader"
-version = "1.0.0"
-description = "YouTube Music Downloader - Download music from YouTube"
-authors = [{name = "YT Music Downloader", email = "support@example.com"}]
-dependencies = [
-    "flet>=0.20.0",
-    "yt-dlp>=2024.1.1",
-    "httpx>=0.26.0",
-    "pydub>=0.25.1",
-    "aiofiles>=23.2.0",
-]
-requires-python = ">=3.8"
-
-[tool.flet]
-product = "YT Music Downloader"
-company = "ExApps"
-copyright = "Copyright (c) 2024 ExApps"
-
-[tool.flet.android]
-package = "com.exapps.ytdownload"
-permissions = [
-    "android.permission.INTERNET",
-    "android.permission.ACCESS_NETWORK_STATE",
-    "android.permission.ACCESS_WIFI_STATE",
-    "android.permission.WRITE_EXTERNAL_STORAGE",
-    "android.permission.READ_EXTERNAL_STORAGE",
-    "android.permission.FOREGROUND_SERVICE",
-    "android.permission.POST_NOTIFICATIONS",
-    "android.permission.WAKE_LOCK",
-]
-
-[tool.flet.android.min_sdk_version]
-version = 21
-
-[tool.flet.android.target_sdk_version]
-version = 34
-
-[tool.flet.android.compile_sdk_version]
-version = 34
-
-[tool.flet.app]
-module = "main"
-
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
-EOF
+        echo "Using existing pyproject.toml configuration:"
+        cat pyproject.toml | head -50
         
     - name: Build Android APK
       run: |
