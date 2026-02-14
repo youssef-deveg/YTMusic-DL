@@ -1,0 +1,38 @@
+name: ytmusic_dl
+description: "A professional media player for Android with audio and video support."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  
+  # Media playback
+  video_player: ^2.8.0
+  
+  # Permissions and file management
+  permission_handler: ^11.0.1
+  path_provider: ^2.1.1
+  
+  # State management
+  provider: ^6.1.1
+  
+  # Database and storage
+  sqflite: ^2.3.0
+  shared_preferences: ^2.2.2
+  
+  # Utils
+  uuid: ^4.2.1
+  path: ^1.8.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
