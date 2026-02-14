@@ -14,27 +14,59 @@ YOUTUBE_API_BASE_URL = "https://www.googleapis.com/youtube/v3"
 # Detect if running on Android
 def is_android():
     """Check if running on Android"""
-    return 'ANDROID_ROOT' in os.environ or platform.system() == 'Linux' and os.path.exists('/system/build.prop')
+    # Check multiple indicators
+    android_indicators = [
+        'ANDROID_ROOT' in os.environ,
+        'ANDROID_DATA' in os.environ,
+        os.path.exists('/system/build.prop'),
+        os.path.exists('/data/data'),
+        os.environ.get('ANDROID_STORAGE') is not None,
+        str(Path.home()) == '/data' or str(Path.home()).startswith('/data/'),
+    ]
+    return any(android_indicators)
+
+def get_android_storage_path():
+    """Get the best available storage path on Android"""
+    # Try environment variables first
+    storage_vars = ['EXTERNAL_STORAGE', 'ANDROID_STORAGE', 'SECONDARY_STORAGE']
+    for var in storage_vars:
+        path = os.environ.get(var)
+        if path and os.path.exists(path):
+            return Path(path)
+    
+    # Try common Android paths
+    common_paths = [
+        '/storage/emulated/0',
+        '/sdcard',
+        '/mnt/sdcard',
+        '/storage/self/primary',
+    ]
+    for path in common_paths:
+        if os.path.exists(path) and os.access(path, os.W_OK):
+            return Path(path)
+    
+    return None
 
 def get_download_path():
     """Get appropriate download path for the platform"""
     if is_android():
-        # On Android, use external storage (accessible to user)
-        # Try common Android storage paths
-        possible_paths = [
-            os.environ.get('EXTERNAL_STORAGE'),
-            os.environ.get('ANDROID_STORAGE'),
-            '/storage/emulated/0',
-            '/sdcard',
-        ]
+        # Try to get Android external storage
+        storage = get_android_storage_path()
+        if storage:
+            return storage / "Music" / "YouTubeDownloads"
         
-        for path in possible_paths:
-            if path and os.path.exists(path) and os.access(path, os.W_OK):
-                return Path(path) / "Music" / "YouTubeDownloads"
+        # Fallback to app files directory (where the app has permission)
+        app_files = os.environ.get('ANDROID_APP_FILES')
+        if app_files and os.path.exists(app_files):
+            return Path(app_files) / "Downloads"
         
-        # Fallback to app private directory
-        app_dir = Path(os.environ.get('ANDROID_APP_PATH', Path.home()))
-        return app_dir / "Music" / "YouTubeDownloads"
+        # Last resort: use cache directory
+        cache_dir = os.environ.get('CACHE_DIR') or os.environ.get('TMPDIR')
+        if cache_dir:
+            return Path(cache_dir) / "YT_Downloads"
+        
+        # Final fallback
+        return Path('/data/local/tmp') / "YT_Downloads"
     else:
         # Desktop platforms
         return Path.home() / "Music" / "YouTubeDownloads"
@@ -42,9 +74,19 @@ def get_download_path():
 def get_config_dir():
     """Get configuration directory"""
     if is_android():
-        # On Android, use app private directory for configs
-        app_dir = Path(os.environ.get('ANDROID_APP_PATH', Path.home()))
-        return app_dir / ".youtube_music_downloader"
+        # Try app data directory first
+        app_data = os.environ.get('ANDROID_APP_DATA')
+        if app_data and os.path.exists(app_data):
+            return Path(app_data) / ".youtube_music_downloader"
+        
+        # Try app files directory
+        app_files = os.environ.get('ANDROID_APP_FILES')
+        if app_files and os.path.exists(app_files):
+            return Path(app_files) / ".config"
+        
+        # Fallback to cache directory
+        cache_dir = os.environ.get('CACHE_DIR') or os.environ.get('TMPDIR') or '/data/local/tmp'
+        return Path(cache_dir) / ".yt_config"
     else:
         return Path.home() / ".youtube_music_downloader"
 

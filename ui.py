@@ -667,7 +667,7 @@ class ImportQueueDialog(ft.AlertDialog):
         self.file_dropdown = ft.Dropdown(
             label="Select Queue File",
             options=[
-                ft.dropdown.Option(f['name'], f["{f['name']} ({f.get('modified', '')})")
+                ft.dropdown.Option(f['name'], f"{f['name']} ({f.get('modified', '')})")
                 for f in files
             ]
         )
