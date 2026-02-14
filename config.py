@@ -4,21 +4,71 @@ Contains constants, default settings, and API configurations
 """
 
 import os
+import platform
 from pathlib import Path
 
 # API Configuration
 YOUTUBE_API_KEY = "AIzaSyBcoHE4l3UtUTS9EjcrmHHMluDWxhREPzE"
 YOUTUBE_API_BASE_URL = "https://www.googleapis.com/youtube/v3"
 
-# Default paths
-DEFAULT_DOWNLOAD_PATH = Path.home() / "Music" / "YouTubeDownloads"
-SETTINGS_FILE = Path.home() / ".youtube_music_downloader" / "settings.json"
-HISTORY_FILE = Path.home() / ".youtube_music_downloader" / "history.json"
-QUEUE_EXPORT_DIR = Path.home() / ".youtube_music_downloader" / "queues"
+# Detect if running on Android
+def is_android():
+    """Check if running on Android"""
+    return 'ANDROID_ROOT' in os.environ or platform.system() == 'Linux' and os.path.exists('/system/build.prop')
 
-# Create directories if they don't exist
+def get_download_path():
+    """Get appropriate download path for the platform"""
+    if is_android():
+        # On Android, use external storage (accessible to user)
+        # Try common Android storage paths
+        possible_paths = [
+            os.environ.get('EXTERNAL_STORAGE'),
+            os.environ.get('ANDROID_STORAGE'),
+            '/storage/emulated/0',
+            '/sdcard',
+        ]
+        
+        for path in possible_paths:
+            if path and os.path.exists(path) and os.access(path, os.W_OK):
+                return Path(path) / "Music" / "YouTubeDownloads"
+        
+        # Fallback to app private directory
+        app_dir = Path(os.environ.get('ANDROID_APP_PATH', Path.home()))
+        return app_dir / "Music" / "YouTubeDownloads"
+    else:
+        # Desktop platforms
+        return Path.home() / "Music" / "YouTubeDownloads"
+
+def get_config_dir():
+    """Get configuration directory"""
+    if is_android():
+        # On Android, use app private directory for configs
+        app_dir = Path(os.environ.get('ANDROID_APP_PATH', Path.home()))
+        return app_dir / ".youtube_music_downloader"
+    else:
+        return Path.home() / ".youtube_music_downloader"
+
+# Default paths
+DEFAULT_DOWNLOAD_PATH = get_download_path()
+SETTINGS_FILE = get_config_dir() / "settings.json"
+HISTORY_FILE = get_config_dir() / "history.json"
+QUEUE_EXPORT_DIR = get_config_dir() / "queues"
+
+# Create directories if they don't exist (with error handling)
 for path in [DEFAULT_DOWNLOAD_PATH, SETTINGS_FILE.parent, QUEUE_EXPORT_DIR]:
-    path.mkdir(parents=True, exist_ok=True)
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+    except (PermissionError, OSError) as e:
+        print(f"Warning: Could not create directory {path}: {e}")
+        # Use fallback path in temp directory
+        import tempfile
+        temp_path = Path(tempfile.gettempdir()) / "YT_Music_Downloader"
+        if path == DEFAULT_DOWNLOAD_PATH:
+            DEFAULT_DOWNLOAD_PATH = temp_path / "Downloads"
+        elif path == SETTINGS_FILE.parent:
+            SETTINGS_FILE = temp_path / "settings.json"
+            HISTORY_FILE = temp_path / "history.json"
+            QUEUE_EXPORT_DIR = temp_path / "queues"
 
 # Audio quality options
 AUDIO_QUALITIES = {

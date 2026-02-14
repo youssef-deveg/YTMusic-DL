@@ -136,7 +136,19 @@ class SettingsManager:
     def download_path(self) -> Path:
         """Get download path"""
         path = Path(self.get('download_path', DEFAULT_SETTINGS['download_path']))
-        path.mkdir(parents=True, exist_ok=True)
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+        except (PermissionError, OSError) as e:
+            print(f"Warning: Could not create download directory {path}: {e}")
+            # Try to get Android external storage
+            import os
+            android_storage = os.environ.get('EXTERNAL_STORAGE') or '/storage/emulated/0'
+            if os.path.exists(android_storage):
+                path = Path(android_storage) / "Music" / "YouTubeDownloads"
+                try:
+                    path.mkdir(parents=True, exist_ok=True)
+                except:
+                    pass
         return path
     
     @download_path.setter
