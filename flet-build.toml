@@ -1,0 +1,113 @@
+# Build configuration for YT Music Downloader
+# This file configures the Flet build process
+
+# Project Information
+project:
+  name: "YT-Music-Downloader"
+  display_name: "YT Music Downloader"
+  description: "Download music from YouTube"
+  version: "1.0.0"
+  company: "ExApps"
+  copyright: "Copyright (c) 2024 ExApps"
+
+# Build Settings
+build:
+  module: "main"
+  src_path: "."
+  
+# Android Configuration
+android:
+  package: "com.exapps.ytdownload"
+  
+  # SDK Versions
+  min_sdk_version: 21  # Android 5.0 (Lollipop) - 99% device compatibility
+  target_sdk_version: 34  # Android 14
+  compile_sdk_version: 34
+  
+  # Permissions
+  permissions:
+    # Network
+    - "android.permission.INTERNET"
+    - "android.permission.ACCESS_NETWORK_STATE"
+    - "android.permission.ACCESS_WIFI_STATE"
+    
+    # Storage
+    - "android.permission.WRITE_EXTERNAL_STORAGE"
+    - "android.permission.READ_EXTERNAL_STORAGE"
+    - "android.permission.MANAGE_EXTERNAL_STORAGE"
+    
+    # Background service
+    - "android.permission.FOREGROUND_SERVICE"
+    - "android.permission.FOREGROUND_SERVICE_DATA_SYNC"
+    
+    # Notifications
+    - "android.permission.POST_NOTIFICATIONS"
+    - "android.permission.WAKE_LOCK"
+    
+    # Media (Android 13+)
+    - "android.permission.READ_MEDIA_AUDIO"
+    - "android.permission.READ_MEDIA_IMAGES"
+    - "android.permission.READ_MEDIA_VIDEO"
+  
+  # Features
+  features:
+    - "android.hardware.wifi"
+    - "android.hardware.touchscreen"
+  
+  # Screen Support
+  supports_screens:
+    small: true
+    normal: true
+    large: true
+    xlarge: true
+    
+  # Build Options
+  build_options:
+    split_debug_info: false
+    shrink_resources: true
+    minify_enabled: true
+    
+  # Signing (for release builds - use GitHub secrets)
+  signing:
+    enabled: false  # Enable for production releases
+    # key_alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+    # key_password: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    # store_file: ${{ secrets.ANDROID_STORE_FILE }}
+    # store_password: ${{ secrets.ANDROID_STORE_PASSWORD }}
+
+# iOS Configuration (for future use)
+ios:
+  bundle_id: "com.exapps.ytdownload"
+  team_id: ""  # Add your Apple Team ID
+
+# Web Configuration (for future use)
+web:
+  base_url: "/"
+
+# Dependencies
+dependencies:
+  python:
+    - "flet>=0.20.0"
+    - "yt-dlp>=2024.1.1"
+    - "httpx>=0.26.0"
+    - "pydub>=0.25.1"
+    - "aiofiles>=23.2.0"
+  
+  android:
+    - "androidx.core:core-ktx:1.12.0"
+    - "androidx.appcompat:appcompat:1.6.1"
+    - "com.google.android.material:material:1.11.0"
+
+# Assets
+assets:
+  icons: "assets/icons/"
+  images: "assets/images/"
+  fonts: "assets/fonts/"
+
+# Splash Screen
+splash:
+  color: "#121212"  # Dark background
+  image: "assets/splash.png"
+  android_12:
+    image: "assets/splash_android12.png"
+    icon_background_color: "#121212"

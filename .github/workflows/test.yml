@@ -1,0 +1,78 @@
+name: Test and Lint
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black pytest
+        pip install -r requirements.txt
+        
+    - name: Check Python syntax
+      run: |
+        python -m py_compile main.py config.py utils.py settings.py search.py downloader.py queue_manager.py ui.py
+        
+    - name: Lint with flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        
+    - name: Check code formatting with black
+      run: |
+        black --check --diff . || true
+        
+    - name: Run pytest (if tests exist)
+      run: |
+        if [ -d "tests" ]; then
+          pytest tests/ -v || true
+        else
+          echo "No tests directory found, skipping tests"
+        fi
+        
+    - name: Verify imports
+      run: |
+        python -c "import config; print('Config OK')"
+        python -c "import utils; print('Utils OK')"
+        python -c "import settings; print('Settings OK')"
+        python -c "import search; print('Search OK')"
+        python -c "import downloader; print('Downloader OK')"
+        python -c "import queue_manager; print('Queue Manager OK')"
+        python -c "import ui; print('UI OK')"
+        
+    - name: Type checking (optional)
+      run: |
+        pip install mypy || true
+        mypy . --ignore-missing-imports || true

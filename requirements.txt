@@ -1,0 +1,38 @@
+# YouTube Music Downloader - Python Dependencies
+# Core dependencies for the application
+
+# Core Framework - Flet (Flutter for Python)
+# Required for building cross-platform UI and APK
+flet>=0.20.0,<0.30.0
+
+# Media Download Engine
+# yt-dlp is used for downloading audio from YouTube
+yt-dlp>=2024.1.1
+
+# HTTP Client
+# Required for YouTube Data API calls
+httpx>=0.26.0
+
+# Audio Processing
+# Optional: for advanced audio features like preview trimming
+pydub>=0.25.1
+
+# Async File Operations
+aiofiles>=23.2.0
+
+# Additional utilities
+# These help with various platform-specific operations
+pathlib>=1.0.1; python_version<"3.4"
+typing-extensions>=4.0.0; python_version<"3.10"
+
+# Build dependencies
+# These are needed when building the APK
+setuptools>=61.0
+wheel>=0.37.0
+
+# Development dependencies (optional)
+# Uncomment these for development
+# pytest>=7.0.0
+# black>=23.0.0
+# flake8>=6.0.0
+# mypy>=1.0.0

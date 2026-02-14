@@ -1,0 +1,159 @@
+[project]
+name = "YT-Music-Downloader"
+version = "1.0.0"
+description = "YouTube Music Downloader - Download music, songs, albums, and playlists from YouTube"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "YT Music Downloader Team", email = "support@example.com"}
+]
+keywords = ["youtube", "music", "downloader", "audio", "flet", "flutter"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Internet :: WWW/HTTP",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "flet>=0.20.0",
+    "yt-dlp>=2024.1.1",
+    "httpx>=0.26.0",
+    "pydub>=0.25.1",
+    "aiofiles>=23.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/20Youssef10/YT-DL"
+Repository = "https://github.com/20Youssef10/YT-DL.git"
+Issues = "https://github.com/20Youssef10/YT-DL/issues"
+Documentation = "https://github.com/20Youssef10/YT-DL/blob/main/README.md"
+
+[project.scripts]
+yt-music-downloader = "main:main"
+
+[tool.flet]
+# Application metadata
+product = "YT Music Downloader"
+company = "ExApps"
+copyright = "Copyright (c) 2024 ExApps"
+
+# Main module
+module = "main"
+
+[tool.flet.app]
+# App entry point
+module = "main"
+src_path = "."
+
+[tool.flet.android]
+# Android package configuration
+package = "com.exapps.ytdownload"
+
+# Minimum SDK version (Android 5.0 - API level 21)
+# This ensures compatibility with most Android devices
+min_sdk_version = 21
+
+# Target SDK version (Android 14 - API level 34)
+target_sdk_version = 34
+
+# Compile SDK version
+compile_sdk_version = 34
+
+# Android permissions
+permissions = [
+    # Network permissions
+    "android.permission.INTERNET",
+    "android.permission.ACCESS_NETWORK_STATE",
+    "android.permission.ACCESS_WIFI_STATE",
+    
+    # Storage permissions
+    "android.permission.WRITE_EXTERNAL_STORAGE",
+    "android.permission.READ_EXTERNAL_STORAGE",
+    "android.permission.MANAGE_EXTERNAL_STORAGE",
+    
+    # Foreground service for background downloads
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
+    
+    # Notifications
+    "android.permission.POST_NOTIFICATIONS",
+    
+    # Wake lock to prevent sleep during downloads
+    "android.permission.WAKE_LOCK",
+    
+    # Media permissions for Android 13+
+    "android.permission.READ_MEDIA_AUDIO",
+    "android.permission.READ_MEDIA_IMAGES",
+    "android.permission.READ_MEDIA_VIDEO",
+]
+
+# Android features
+features = [
+    "android.hardware.wifi",
+    "android.hardware.touchscreen",
+]
+
+# Screen support
+screen_support = [
+    "smallScreens",
+    "normalScreens", 
+    "largeScreens",
+    "xlargeScreens"
+]
+
+# App icon (will use default if not specified)
+# icon = "assets/icon.png"
+
+# App splash screen
+# splash = "assets/splash.png"
+
+[tool.flet.splash]
+# Splash screen configuration
+ios = false
+android = true
+web = false
+
+[tool.flet.compile]
+# Compilation flags
+flags = ["-O3"]
+
+[tool.flet.assets]
+# Additional assets to include
+# icons = "assets/icons/"
+# fonts = "assets/fonts/"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "flet>=0.20.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["YT-Music-Downloader"]
+
+[tool.setuptools.package-data]
+"YT-Music-Downloader" = ["*.py", "*.json", "*.txt", "*.md"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

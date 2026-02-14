@@ -1,0 +1,178 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - debug
+
+env:
+  PYTHON_VERSION: '3.11'
+  FLUTTER_VERSION: '3.19.0'
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        
+    - name: Install Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Install Android Build Tools
+      run: |
+        sdkmanager --install "build-tools;34.0.0" "platforms;android-34" "platform-tools"
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flet
+        pip install -r requirements.txt
+        
+    - name: Verify installations
+      run: |
+        python --version
+        flet --version
+        flutter --version
+        java -version
+        echo $ANDROID_HOME
+        
+    - name: Create Flet configuration
+      run: |
+        cat > pyproject.toml << 'EOF'
+[project]
+name = "YT-Music-Downloader"
+version = "1.0.0"
+description = "YouTube Music Downloader - Download music from YouTube"
+authors = [{name = "YT Music Downloader", email = "support@example.com"}]
+dependencies = [
+    "flet>=0.20.0",
+    "yt-dlp>=2024.1.1",
+    "httpx>=0.26.0",
+    "pydub>=0.25.1",
+    "aiofiles>=23.2.0",
+]
+requires-python = ">=3.8"
+
+[tool.flet]
+product = "YT Music Downloader"
+company = "ExApps"
+copyright = "Copyright (c) 2024 ExApps"
+
+[tool.flet.android]
+package = "com.exapps.ytdownload"
+permissions = [
+    "android.permission.INTERNET",
+    "android.permission.ACCESS_NETWORK_STATE",
+    "android.permission.ACCESS_WIFI_STATE",
+    "android.permission.WRITE_EXTERNAL_STORAGE",
+    "android.permission.READ_EXTERNAL_STORAGE",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.WAKE_LOCK",
+]
+
+[tool.flet.android.min_sdk_version]
+version = 21
+
+[tool.flet.android.target_sdk_version]
+version = 34
+
+[tool.flet.android.compile_sdk_version]
+version = 34
+
+[tool.flet.app]
+module = "main"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+EOF
+        
+    - name: Build Android APK
+      run: |
+        echo "Starting APK build..."
+        flet build apk \
+          --verbose \
+          --project "YT-Music-Downloader" \
+          --product "YT Music Downloader" \
+          --company "ExApps" \
+          --copyright "Copyright (c) 2024 ExApps" \
+          --build-version "${{ github.ref_name || '1.0.0' }}" \
+          --build-number ${{ github.run_number }} \
+          --module "main"
+      env:
+        ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
+        
+    - name: Check build output
+      run: |
+        echo "Build directory contents:"
+        ls -la build/ || echo "No build directory found"
+        if [ -d "build/apk" ]; then
+          echo "APK directory contents:"
+          ls -la build/apk/
+          find build/apk -name "*.apk" -type f
+        fi
+        
+    - name: Rename and organize APK
+      run: |
+        mkdir -p release
+        if [ -f "build/apk/app-release.apk" ]; then
+          cp "build/apk/app-release.apk" "release/YT-Music-Downloader-v${{ github.ref_name || '1.0.0' }}-${{ github.run_number }}.apk"
+        elif [ -f "build/apk/app-debug.apk" ]; then
+          cp "build/apk/app-debug.apk" "release/YT-Music-Downloader-v${{ github.ref_name || '1.0.0' }}-${{ github.run_number }}-debug.apk"
+        else
+          # Find any APK file
+          APK_FILE=$(find build -name "*.apk" -type f | head -1)
+          if [ -n "$APK_FILE" ]; then
+            cp "$APK_FILE" "release/YT-Music-Downloader-v${{ github.ref_name || '1.0.0' }}-${{ github.run_number }}.apk"
+          fi
+        fi
+        ls -la release/
+        
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: YT-Music-Downloader-APK
+        path: release/*.apk
+        if-no-files-found: error
+        retention-days: 30
+        
+    - name: Upload build logs
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: build-logs
+        path: build/
+        retention-days: 7
